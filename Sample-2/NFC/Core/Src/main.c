@@ -27,25 +27,41 @@ int main(void)
   /* Infinite loop SOURCE CODE */
   /* OUR CODE BEGIN WHILE */
   while (1)
-  {
-    uint8_t dataBuffer[32];  // Buffer to store the received data
-
-    // Read data from NFC Click via I2C
-    if (HAL_I2C_Master_Receive(&hi2c1, 0x28, dataBuffer, sizeof(dataBuffer), HAL_MAX_DELAY) == HAL_OK)
     {
-      // Print the received data to the serial monitor
-      for (int i = 0; i < sizeof(dataBuffer); i++)
-      {
-        char uartBuffer[8];  // Buffer to store the converted data
+      uint8_t dataBuffer[32];  // Buffer to store the received data
 
-        // Convert the data to ASCII and print it
-        sprintf(uartBuffer, "%02X ", dataBuffer[i]);
-        HAL_UART_Transmit(&huart2, (uint8_t*)uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
-      }
-      HAL_UART_Transmit(&huart2, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+      if(HAL_I2C_IsDeviceReady(&hi2c1, (0x28<<1), 2, 100) == HAL_OK)
+      {
+      HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_3);
+      HAL_Delay(1000);
+      // Read data from NFC Click via I2C
+      if (HAL_I2C_Master_Receive(&hi2c1, 0x51, dataBuffer, sizeof(dataBuffer), HAL_MAX_DELAY) == HAL_OK)
+      {
+        // Print the received data to the serial monitor
+        for (int i = 0; i < sizeof(dataBuffer); i++)
+        {
+          char uartBuffer[8];  // Buffer to store the converted data
+
+          // Convert the data to ASCII and print it
+          sprintf(uartBuffer, "%02X ", dataBuffer[i]);
+          HAL_UART_Transmit(&huart2, (uint8_t*)uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
+        }
+        HAL_UART_Transmit(&huart2, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+      }else{
+            char uartBuffer[8];
+            sprintf(uartBuffer, "%02X ", 0);
+            HAL_UART_Transmit(&huart2, (uint8_t*)uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
+            HAL_UART_Transmit(&huart2, (uint8_t*)"\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+          }
+
+      HAL_Delay(1000);  // Delay for 1 second between readings
+    }else{
+    	char i2cBuffer[8];
+    	sprintf(i2cBuffer, "%02X", 2);
+    	HAL_UART_Transmit(&huart2,(uint8_t*)i2cBuffer, strlen(i2cBuffer), HAL_MAX_DELAY);
+    	HAL_UART_Transmit(&huart2,(uint8_t*)i2cBuffer, strlen(i2cBuffer), HAL_MAX_DELAY);
     }
 
-    HAL_Delay(1000);  // Delay for 1 second between readings
   }
 }
 
