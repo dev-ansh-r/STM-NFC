@@ -94,6 +94,49 @@ int main(void)
   MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   HAL_GPIO_TogglePin(GPIOB,GPIO_PIN_4);   // RST
+
+  // 0x2F: Command Message, komplett Message, GID = 1111b
+  // 0x02 = OID
+  uint8_t CORE_RESET_CMD[] = {0x20, 0x00, 0x01, 0x00};
+  HAL_I2C_Master_Transmit(&hi2c1, (0x28<<1), CORE_RESET_CMD , sizeof(CORE_RESET_CMD), HAL_MAX_DELAY);
+  HAL_Delay(500); // Delay for 500 milisecond between readings
+
+  // Read data from NFC Click via I2C
+  uint8_t dataBufferREST[32]; // Buffer to store the received data
+  if(HAL_GPIO_ReadPin( GPIOB, GPIO_PIN_5) == GPIO_PIN_SET)
+  {
+    HAL_I2C_Master_Receive(&hi2c1, (0x28 << 1), dataBufferREST, sizeof(dataBufferREST), HAL_MAX_DELAY);
+    // Print the received data to the serial monitor
+    for(int i = 0; i < sizeof(dataBufferREST); i++)
+    {
+      char uartBuffer[8];  // Buffer to store the converted data
+
+      // Convert the data to ASCII and print it
+      sprintf(uartBuffer, "%02X ", dataBufferREST[i]);
+      HAL_UART_Transmit(&huart2, (uint8_t*) uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
+    }
+    HAL_UART_Transmit(&huart2, (uint8_t*) "\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+  }
+
+  uint8_t CORE_INIT_CMD[] = {0x20, 0x01, 0x00};
+  HAL_I2C_Master_Transmit(&hi2c1, (0x28<<1), CORE_INIT_CMD , sizeof(CORE_INIT_CMD), HAL_MAX_DELAY);
+  HAL_Delay(500); // Delay for 500 milisecond between readings
+  if(HAL_GPIO_ReadPin( GPIOB, GPIO_PIN_5) == GPIO_PIN_SET)
+  {
+    // Read data from NFC Click via I2C
+    uint8_t dataBufferINT[32]; // Buffer to store the received data
+    HAL_I2C_Master_Receive(&hi2c1, (0x28 << 1), dataBufferINT, sizeof(dataBufferINT), HAL_MAX_DELAY);
+    // Print the received data to the serial monitor
+    for(int i = 0; i < sizeof(dataBufferINT); i++)
+    {
+      char uartBuffer[8];  // Buffer to store the converted data
+
+      // Convert the data to ASCII and print it
+      sprintf(uartBuffer, "%02X ", dataBufferINT[i]);
+      HAL_UART_Transmit(&huart2, (uint8_t*) uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
+    }
+    HAL_UART_Transmit(&huart2, (uint8_t*) "\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -104,7 +147,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    HAL_StatusTypeDef ret;
+/*    HAL_StatusTypeDef ret;
     GPIO_PinState a = HAL_GPIO_ReadPin( GPIOB, GPIO_PIN_5) ;
     if (a == GPIO_PIN_SET ){
       HAL_UART_Transmit(&huart2, "SET\r\n", sizeof("SET\r\n"), HAL_MAX_DELAY);
@@ -112,16 +155,14 @@ int main(void)
       HAL_UART_Transmit(&huart2, "UNSET\r\n", sizeof("UNSET\r\n"), HAL_MAX_DELAY);
     }
     HAL_Delay(501);
- /*   if(HAL_I2C_IsDeviceReady(&hi2c1, (0x28<<1), 2, 100) == HAL_OK)
+    if(HAL_I2C_IsDeviceReady(&hi2c1, (0x28<<1), 2, 100) == HAL_OK)
     {
-        HAL_GPIO_WritePin( GPIOB, GPIO_PIN_3,  GPIO_PIN_SET);
+        HAL_GPIO_WritePin( GPIOB, GPIO_PIN_3,  GPIO_PIN_SET);  //Set LED
 
         uint8_t stat[] = "Device is Ready, and LED  is ON\r\n";
         HAL_UART_Transmit(&huart2, stat, sizeof(stat), HAL_MAX_DELAY);
-        // 0x2F: Command Message, komplett Message, GID = 1111b
-        // 0x02 = OID
-        ret = HAL_I2C_Master_Transmit(&hi2c1, (0x28<<1), 0x2F02, 2, HAL_MAX_DELAY);
-        HAL_Delay(500); // Delay for 500 milisecond between readings
+
+
 
         if (ret == HAL_OK)
         {
