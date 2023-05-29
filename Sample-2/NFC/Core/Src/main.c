@@ -13,6 +13,58 @@ static void MX_GPIO_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_I2C1_Init(void);
 
+/* Constants */
+#define NFC_CLICK_ADDRESS 0xAA  // Replace with the correct address of NFC Click
+
+/* Function to send NCI command to NFC Click */
+uint8_t sendNCICommand(uint8_t *command, uint8_t commandSize, uint8_t *response, uint16_t *responseSize)
+{
+  if (HAL_I2C_Master_Transmit(&hi2c1, NFC_CLICK_ADDRESS, command, commandSize, HAL_MAX_DELAY) != HAL_OK)
+    return NFC_ERROR;
+
+  if (HAL_I2C_Master_Receive(&hi2c1, NFC_CLICK_ADDRESS, response, *responseSize, HAL_MAX_DELAY) != HAL_OK)
+    return NFC_ERROR;
+
+  return NFC_SUCCESS;
+}
+
+/* Function to delay in milliseconds */
+void nfc_hal_delay(uint32_t milliseconds)
+{
+  HAL_Delay(milliseconds);
+}
+
+int initialize_core(void)
+{
+  uint8_t answer[ANSWER_MAX_SIZE] = {0};
+  uint16_t answer_size = 0;
+  int i = 10;
+  uint8_t CORE_RESET_CMD[] = {0x20, 0x00, 0x01, 0x01};
+  uint8_t CORE_INIT_CMD[] = {0x20, 0x01, 0x00};
+
+#if defined(DEBUG)
+  printf("\r\n***** Resetting and Initializing Core *****\r\n");
+#endif
+
+  /* Reset the core */
+  while (sendNCICommand(CORE_RESET_CMD, sizeof(CORE_RESET_CMD), answer, &answer_size))
+  {
+    if (!i--)
+      return NFC_ERROR;
+
+    nfc_hal_delay(500);
+  }
+
+  /* Once reset, initialize the core */
+  if (sendNCICommand(CORE_INIT_CMD, sizeof(CORE_INIT_CMD), answer, &answer_size))
+    return NFC_ERROR;
+  else if ((answer[0] != 0x40) || (answer[1] != 0x01) || (answer[3] != 0x00))
+    return NFC_ERROR;
+
+  return NFC_SUCCESS;
+}
+
+
 int main(void)
 {
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
@@ -23,6 +75,13 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+
+  /*Initialize core*/
+  if (initialize_core() != NFC_SUCCESS)
+  {
+    printf("Error initializing core\r\n");
+    return NFC_ERROR;
+  }
 
   /* Infinite loop SOURCE CODE */
   /* OUR CODE BEGIN WHILE */
