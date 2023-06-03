@@ -116,6 +116,13 @@ int main(void)
       HAL_UART_Transmit(&huart2, (uint8_t*) uartBuffer, strlen(uartBuffer), HAL_MAX_DELAY);
     }
     HAL_UART_Transmit(&huart2, (uint8_t*) "\r\n", 2, HAL_MAX_DELAY);  // Print a new line
+
+    // Check if the received data matches "SET LED"
+    if (memcmp(dataBufferREST, "SET LED", 7) == 0)
+    {
+      // Turn on the default LED on Nucleo L432KC (Pin LD2)
+      HAL_GPIO_WritePin(GPIOB, GPIO_PIN_3, GPIO_PIN_SET);
+    }
   }
 
   uint8_t CORE_INIT_CMD[] = {0x20, 0x01, 0x00};
@@ -147,7 +154,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-/*    HAL_StatusTypeDef ret;
+    HAL_StatusTypeDef ret;
     GPIO_PinState a = HAL_GPIO_ReadPin( GPIOB, GPIO_PIN_5) ;
     if (a == GPIO_PIN_SET ){
       HAL_UART_Transmit(&huart2, "SET\r\n", sizeof("SET\r\n"), HAL_MAX_DELAY);
@@ -166,7 +173,7 @@ int main(void)
 
         if (ret == HAL_OK)
         {
-            uint8_t stat[] = "Transmit to NFCC is Ok\r\n";
+            uint8_t stat[] = "Transmit to NFC is Ok\r\n";
             HAL_UART_Transmit(&huart2, stat, sizeof(stat), HAL_MAX_DELAY);
 
         //    uint8_t dataBuffer[32] = {0x4F, 0x02, 0x05};
@@ -207,7 +214,7 @@ int main(void)
         HAL_UART_Transmit(&huart2, stat, sizeof(stat), HAL_MAX_DELAY);
         HAL_Delay(500);  // Delay for 1 second between readings
     }
-*/
+
     /* USER CODE BEGIN 3 */
 
     /* USER CODE END WHILE */
